@@ -5,7 +5,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Add references
-
+from openai import OpenAI
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
 def main(): 
 
@@ -21,7 +22,12 @@ def main():
 
 
         # Create an OpenAI client
-        
+        credential = DefaultAzureCredential()
+        token_provider = get_bearer_token_provider(credential, "https://ai.azure.com/.default")
+        client = OpenAI(
+            base_url=openai_endpoint,
+            api_key=token_provider()
+        )        
 
 
         # Initialize prompts
@@ -40,7 +46,18 @@ def main():
 
 
                 # Get a response to image input
-                    
+                image_url = "https://microsoftlearning.github.io/mslearn-ai-vision/Labfiles/gen-ai-vision/orange.jpeg"
+                response = client.responses.create(
+                        model=model_deployment,
+                        input=[
+                            {"role": "developer", "content": system_message},
+                            { "role": "user", "content": [  
+                                { "type": "input_text", "text": prompt},
+                                { "type": "input_image", "image_url": image_url}
+                            ]} 
+                        ]
+                )
+                print(response.output_text)                    
 
 
     except Exception as ex:
